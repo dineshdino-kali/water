@@ -1,103 +1,158 @@
-import Image from "next/image";
+"use client";
+
+import confetti from "canvas-confetti";
+import { useEffect, useState } from "react";
+import { Button } from "../components/ui/button";
+import { SparklesText } from "../components/ui/sparkles-text";
+import { QuestionModal } from "../components/ui/questions";
+import { WaterCongratsModal } from "../components/ui/modal";
+import { NoWaterModal } from "../components/ui/nowater";
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const questions = [
+    "🥺💕 En chellamaa neengaa?",
+    "💛🤗 En thangamaa neengaa?",
+    "💎✨ En vairamaa neengaa?",
+    "🍫😚 En choci baby ah neenga?",
+    "🌹🥰 En sandhana kattaya neenga?",
+    "🐎🔥 En naatu kattaya neenga?",
+    "🍭💖 En chakara katti ah neenga?",
+    "🥭😍 En Malgova mambazhama neenga?",
+  ];
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
+  const [index, setIndex] = useState(0);
+  const [doneQuestions, setDoneQuestions] = useState(false);
+  const [timerDone, setTimerDone] = useState(false);
+  const [showNoModal, setShowNoModal] = useState(false);
+
+  /** ───────── WATER LOCK LOGIC ───────── **/
+  const [lockUntil, setLockUntil] = useState<number | null>(null);
+  const [remainingTime, setRemainingTime] = useState(0);
+
+  // Every second reduce countdown
+  useEffect(() => {
+    if (!lockUntil) return;
+
+    const interval = setInterval(() => {
+      const left = lockUntil - Date.now();
+      if (left <= 0) {
+        setLockUntil(null);
+        setRemainingTime(0);
+        clearInterval(interval);
+      } else {
+        setRemainingTime(Math.ceil(left / 1000));
+      }
+    }, 1000);
+
+    return () => clearInterval(interval);
+  }, [lockUntil]);
+
+  /** ───────── QUESTIONS LOGIC ───────── **/
+  const handleQuestionAnswer = () => {
+    if (lockUntil) return; // Block if locked
+
+    if (index < questions.length - 1) {
+      setIndex(index + 1);
+    } else {
+      setDoneQuestions(true);
+    }
+  };
+
+  /** ───────── CAUSE LOCK (NO CLICK) ───────── **/
+  const handleNoClick = () => {
+    const plus60 = Date.now() + 60_000; // 1 minute
+
+    // If already locked → extend
+    if (lockUntil && lockUntil > Date.now()) {
+      setLockUntil(lockUntil + 60_000);
+    } else {
+      setLockUntil(plus60);
+    }
+
+    setShowNoModal(true);
+  };
+
+  /** ───────── CONFETTI ───────── **/
+  const triggerConfetti = () => {
+    if (!timerDone || lockUntil) return;
+
+    const end = Date.now() + 3000;
+    const colors = ["#a786ff", "#fd8bbc", "#eca184", "#f8deb1"];
+
+    const frame = () => {
+      if (Date.now() > end) return;
+
+      confetti({
+        particleCount: 4,
+        angle: 60,
+        spread: 55,
+        startVelocity: 60,
+        origin: { x: 0, y: 0.5 },
+        colors,
+      });
+
+      confetti({
+        particleCount: 4,
+        angle: 120,
+        spread: 55,
+        startVelocity: 60,
+        origin: { x: 1, y: 0.5 },
+        colors,
+      });
+      requestAnimationFrame(frame);
+    };
+    frame();
+  };
+
+  return (
+    <div className="h-screen w-full flex flex-col items-center justify-center bg-black text-white px-6">
+      <SparklesText className="text-center text-2xl sm:text-3xl md:text-4xl font-semibold max-w-[600px]">
+        Hey kid, have you drunk water?
+      </SparklesText>
+
+      {/* Controls */}
+      <div className="flex gap-3 mt-6">
+        <Button onClick={handleNoClick} disabled={lockUntil !== null}>
+          No
+        </Button>
+
+        <Button
+          variant="secondary"
+          disabled={!timerDone || lockUntil !== null}
+          onClick={triggerConfetti}
         >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+          Yes!
+        </Button>
+      </div>
+
+      {/* When locked show countdown */}
+      {lockUntil && (
+        <>
+          <p className="mt-4 text-red-400 text-center">
+            😡 Thanni kudichitu vaa! apodhan you can enjoy the confetti...
+            Locked for: <b>{remainingTime}s</b>
+          </p>
+          <p className="mt-4 text-red-400 text-center">
+           NOTE : Pressing NO button extends the lock by 1 minute each time!
+          </p>
+        </>
+      )}
+
+      {/* Question modal only if NOT locked */}
+      {!doneQuestions && !lockUntil && (
+        <QuestionModal
+          question={questions[index]}
+          onAnswer={handleQuestionAnswer}
+        />
+      )}
+
+      {/* Timer modal after questions finished */}
+      {doneQuestions && !timerDone && (
+        <WaterCongratsModal onFinish={() => setTimerDone(true)} />
+      )}
+
+      {/* Cute baby modal when NO */}
+      {showNoModal && <NoWaterModal onClose={() => setShowNoModal(false)} />}
     </div>
   );
 }
